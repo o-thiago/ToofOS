@@ -42,13 +42,7 @@
     ];
   };
 
-  services = {
-    xserver.enable = true;
-    openssh.enable = true;
-    desktopManager.plasma6.enable = true;
-    displayManager.sddm.enable = true;
-  };
-
+  services.openssh.enable = true;
   programs = {
     gamescope.enable = true;
     git.enable = true;
@@ -74,7 +68,10 @@
   powerManagement.cpuFreqGovernor = "performance";
   hardware = {
     # Apply suggested hardware tweaks on the pi.
-    raspberry-pi."4".apply-overlays-dtmerge.enable = true;
+    raspberry-pi."4" = {
+      fkms-3d.enable = true;
+      apply-overlays-dtmerge.enable = true;
+    };
 
     graphics.enable = true;
     # Required so NixOS includes the proprietary Raspberry Pi wireless firmware
