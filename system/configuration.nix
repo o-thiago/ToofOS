@@ -37,6 +37,9 @@
     extraGroups = [
       "networkmanager"
       "wheel"
+      "video"
+      "render"
+      "input"
     ];
   };
 
@@ -50,17 +53,29 @@
     };
   };
 
-  # Graphis support and hardware gpu acceleration
-  boot.kernelModules = [
-    "vc4"
-    "v3d"
-  ];
+  # Graphics support and hardware gpu acceleration
+  boot = {
+    # Allocates 512MB to the Contiguous Memory Allocator (CMA) for the GPU
+    kernelParams = [ "cma=1024" ];
+    kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
+    kernelModules = [
+      "vc4"
+      "v3d"
+    ];
+  };
 
   hardware = {
+    # Apply suggested hardware tweaks on the pi.
+    raspberry-pi."4".apply-overlays-dtmerge.enable = true;
+
     graphics.enable = true;
     # Required so NixOS includes the proprietary Raspberry Pi wireless firmware
     # blobs needed by the onboard Wi-Fi/Bluetooth hardware.
     enableRedistributableFirmware = true;
+
+    # Required to load the hardware map and overlays
+    # This allows the pi to actually expose gpu and other pluggable systems.
+    deviceTree.enable = true;
   };
 
   environment.systemPackages = with pkgs; [
