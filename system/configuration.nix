@@ -50,9 +50,14 @@
     };
   };
 
+  # Graphis support and hardware gpu acceleration
+  boot.kernelModules = [
+    "vc4"
+    "v3d"
+  ];
+
   hardware = {
     graphics.enable = true;
-    raspberry-pi."4".fkms-3d.enable = true; # Vulkan based hardware acceleration.
     # Required so NixOS includes the proprietary Raspberry Pi wireless firmware
     # blobs needed by the onboard Wi-Fi/Bluetooth hardware.
     enableRedistributableFirmware = true;
@@ -60,7 +65,7 @@
 
   environment.systemPackages = with pkgs; [
     (writeShellScriptBin "osu!" ''
-      exec ${lib.getExe gamescope} -- ${lib.getExe osu-lazer-bin} "$@"
+      exec ${lib.getExe gamescope} -- ${lib.getExe osu-lazer} "$@"
     '')
   ];
 
