@@ -15,7 +15,6 @@
     allowUnsupportedSystem = true;
   };
 
-  services.openssh.enable = true;
   networking = {
     hostName = "toofos";
     networkmanager = {
@@ -43,6 +42,13 @@
     ];
   };
 
+  services = {
+    xserver.enable = true;
+    openssh.enable = true;
+    desktopManager.plasma6.enable = true;
+    displayManager.sddm.enable = true;
+  };
+
   programs = {
     gamescope.enable = true;
     git.enable = true;
@@ -55,8 +61,8 @@
 
   # Graphics support and hardware gpu acceleration
   boot = {
-    # Allocates 512MB to the Contiguous Memory Allocator (CMA) for the GPU
-    kernelParams = [ "cma=1024" ];
+    # Allocates 1024MB to the Contiguous Memory Allocator (CMA) for the GPU
+    kernelParams = [ "cma=1G" ];
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
     kernelModules = [
       "vc4"
@@ -64,6 +70,8 @@
     ];
   };
 
+  # Optimization: Prevent CPU clock scaling to reduce stutter
+  powerManagement.cpuFreqGovernor = "performance";
   hardware = {
     # Apply suggested hardware tweaks on the pi.
     raspberry-pi."4".apply-overlays-dtmerge.enable = true;
