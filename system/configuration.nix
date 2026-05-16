@@ -92,6 +92,7 @@
 
   # Graphics support and hardware gpu acceleration
   boot = {
+    kernelParams = [ "cma=512M" ];
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
     kernelModules = [
       "vc4"
@@ -105,10 +106,6 @@
   hardware = {
     # Apply suggested hardware tweaks on the pi.
     raspberry-pi."4" = {
-      fkms-3d = {
-        enable = true;
-        cma = 1024; # Allocates 1024MB to the Contiguous Memory Allocator (CMA) for the GPU
-      };
       apply-overlays-dtmerge.enable = true;
     };
 
@@ -126,7 +123,16 @@
 
     # Required to load the hardware map and overlays
     # This allows the pi to actually expose gpu and other pluggable systems.
-    deviceTree.enable = true;
+    deviceTree = {
+      enable = true;
+      filter = "*rpi-4-*.dtb";
+      overlays = [
+        {
+          name = "vc4-kms-v3d";
+          dtboFile = "${pkgs.linuxKernel.packages.linux_rpi4.kernel}/dtbs/overlays/vc4-kms-v3d-pi4.dtbo";
+        }
+      ];
+    };
   };
 
   system.stateVersion = "26.05";
