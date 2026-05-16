@@ -1,7 +1,14 @@
-{ pkgs, lib, ... }:
+{ pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
+  ];
+
+  # Optimize disk performance and reduce SD card wear by disabling access time
+  # updates and increasing the interval between data syncs to the disk.
+  fileSystems."/".options = [
+    "noatime"
+    "commit=120"
   ];
 
   nix.settings.experimental-features = [
@@ -24,6 +31,19 @@
     };
   };
 
+  # Optimize memory for 8GB RAM using zram
+  zramSwap = {
+    enable = true;
+    memoryPercent = 50;
+  };
+
+  security = {
+    # Required for Wayland
+    polkit.enable = true;
+    # Low latency audio for gaming
+    rtkit.enable = true;
+  };
+
   time.timeZone = "UTC";
   i18n.defaultLocale = "pt_BR.UTF-8";
   console.keyMap = "br-abnt2";
@@ -42,7 +62,24 @@
     ];
   };
 
-  services.openssh.enable = true;
+  services = {
+    openssh.enable = true;
+    desktopManager.plasma6.enable = true;
+    pipewire = {
+      enable = true;
+      pulse.enable = true;
+      jack.enable = true;
+      alsa = {
+        enable = true;
+        support32Bit = true;
+      };
+    };
+    displayManager.sddm = {
+      enable = true;
+      wayland.enable = true;
+    };
+  };
+
   programs = {
     gamescope.enable = true;
     git.enable = true;
@@ -55,8 +92,6 @@
 
   # Graphics support and hardware gpu acceleration
   boot = {
-    # Allocates 1024MB to the Contiguous Memory Allocator (CMA) for the GPU
-    kernelParams = [ "cma=1G" ];
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
     kernelModules = [
       "vc4"
@@ -66,14 +101,25 @@
 
   # Optimization: Prevent CPU clock scaling to reduce stutter
   powerManagement.cpuFreqGovernor = "performance";
+
   hardware = {
     # Apply suggested hardware tweaks on the pi.
     raspberry-pi."4" = {
-      fkms-3d.enable = true;
+      fkms-3d = {
+        enable = true;
+        cma = 1024; # Allocates 1024MB to the Contiguous Memory Allocator (CMA) for the GPU
+      };
       apply-overlays-dtmerge.enable = true;
     };
 
-    graphics.enable = true;
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+    };
+
+    xpadneo.enable = true; # Xbox controller support
+    graphics.enable = true; # GPU support
+
     # Required so NixOS includes the proprietary Raspberry Pi wireless firmware
     # blobs needed by the onboard Wi-Fi/Bluetooth hardware.
     enableRedistributableFirmware = true;
@@ -82,12 +128,6 @@
     # This allows the pi to actually expose gpu and other pluggable systems.
     deviceTree.enable = true;
   };
-
-  environment.systemPackages = with pkgs; [
-    (writeShellScriptBin "osu!" ''
-      exec ${lib.getExe gamescope} -- ${lib.getExe osu-lazer} "$@"
-    '')
-  ];
 
   system.stateVersion = "26.05";
 }
