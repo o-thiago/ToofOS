@@ -94,10 +94,8 @@
   boot = {
     kernelParams = [ "cma=1024M" ];
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
-    kernelModules = [
-      "vc4"
-      "v3d"
-    ];
+    initrd.kernelModules = [ "vc4" ];
+    kernelModules = [ "v3d" ];
   };
 
   # Optimization: Prevent CPU clock scaling to reduce stutter
