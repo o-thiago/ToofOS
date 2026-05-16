@@ -90,47 +90,15 @@
     };
   };
 
-  # Graphics support and hardware gpu acceleration
-  boot = {
-    kernelParams = [ "cma=1024M" ];
-    kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
-    initrd.kernelModules = [ "vc4" ];
-    kernelModules = [ "v3d" ];
-  };
+  # Keep a larger contiguous memory area for graphics workloads.
+  boot.kernelParams = [ "cma=1024M" ];
 
   # Optimization: Prevent CPU clock scaling to reduce stutter
   powerManagement.cpuFreqGovernor = "performance";
 
   hardware = {
-    # Apply suggested hardware tweaks on the pi.
-    raspberry-pi."4" = {
-      apply-overlays-dtmerge.enable = true;
-    };
-
-    bluetooth = {
-      enable = true;
-      powerOnBoot = true;
-    };
-
     xpadneo.enable = true; # Xbox controller support
     graphics.enable = true; # GPU support
-
-    # Required so NixOS includes the proprietary Raspberry Pi wireless firmware
-    # blobs needed by the onboard Wi-Fi/Bluetooth hardware.
-    enableRedistributableFirmware = true;
-
-    # Required to load the hardware map and overlays
-    # This allows the pi to actually expose gpu and other pluggable systems.
-    deviceTree = {
-      enable = true;
-      filter = "*rpi-4-*.dtb";
-      overlays = [
-        {
-          name = "vc4-kms-v3d";
-          dtboFile = "${pkgs.linuxKernel.packages.linux_rpi4.kernel}/dtbs/overlays/vc4-kms-v3d-pi4.dtbo";
-        }
-      ];
-    };
   };
 
   system.stateVersion = "26.05";
