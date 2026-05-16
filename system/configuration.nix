@@ -11,10 +11,25 @@
     "commit=120"
   ];
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix = {
+    settings.experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+
+    # Keep only the newest 3 NixOS system generations and collect
+    # unreachable store paths automatically.
+    gc = {
+      automatic = true;
+      dates = "weekly";
+      options = "--delete-generations +3";
+    };
+
+    optimise = {
+      automatic = true;
+      dates = [ "weekly" ];
+    };
+  };
 
   nixpkgs.config = {
     allowUnfree = true;
