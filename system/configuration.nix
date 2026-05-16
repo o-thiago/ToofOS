@@ -90,8 +90,22 @@
     };
   };
 
-  # Keep a larger contiguous memory area for graphics workloads.
-  boot.kernelParams = [ "cma=1024M" ];
+  boot = {
+    # Keep a larger contiguous memory area for graphics workloads.
+    kernelParams = [ "cma=1024M" ];
+
+    loader =
+      let
+        maxBootImages = 3;
+      in
+      {
+        # Raspberry Pi 4 uses U-Boot by default via nixos-raspberrypi.
+        generic-extlinux-compatible.configurationLimit = maxBootImages;
+
+        # Also limit generations if switching to the direct kernel bootloader.
+        raspberry-pi.configurationLimit = maxBootImages;
+      };
+  };
 
   # Optimization: Prevent CPU clock scaling to reduce stutter
   powerManagement.cpuFreqGovernor = "performance";
