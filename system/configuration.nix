@@ -4,8 +4,8 @@
     ./hardware-configuration.nix
   ];
 
-  # Optimize disk performance and reduce SD card wear by disabling access time
-  # updates and increasing the interval between data syncs to the disk.
+  # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
+  # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
   fileSystems."/".options = [
     "noatime"
     "commit=120"
@@ -17,8 +17,8 @@
       "flakes"
     ];
 
-    # Keep only the newest 3 NixOS system generations and collect
-    # unreachable store paths automatically.
+    # Mantém apenas as 3 gerações mais recentes do sistema NixOS e coleta
+    # automaticamente os caminhos da store que não são mais alcançáveis.
     gc = {
       automatic = true;
       dates = "weekly";
@@ -33,7 +33,7 @@
 
   nixpkgs.config = {
     allowUnfree = true;
-    # Allows nix-eval to run from unsupported architectures. Such as x86-64 linux desktops.
+    # Permite executar nix-eval a partir de arquiteturas sem suporte, como desktops x86-64 Linux.
     allowUnsupportedSystem = true;
   };
 
@@ -41,21 +41,21 @@
     hostName = "toofos";
     networkmanager = {
       enable = true;
-      # Prevent host becoming unreachable on WiFi after some time.
+      # Evita que o host fique inacessível no Wi-Fi depois de algum tempo.
       wifi.powersave = false;
     };
   };
 
-  # Optimize memory for 8GB RAM using zram
+  # Otimiza a memória para 8 GB de RAM usando zram
   zramSwap = {
     enable = true;
     memoryPercent = 50;
   };
 
   security = {
-    # Required for Wayland
+    # Necessário para Wayland
     polkit.enable = true;
-    # Low latency audio for gaming
+    # Áudio de baixa latência para jogos
     rtkit.enable = true;
   };
 
@@ -106,7 +106,7 @@
   };
 
   boot = {
-    # Keep a larger contiguous memory area for graphics workloads.
+    # Mantém uma área maior de memória contígua para cargas gráficas.
     kernelParams = [ "cma=1024M" ];
 
     loader =
@@ -114,20 +114,20 @@
         maxBootImages = 3;
       in
       {
-        # Raspberry Pi 4 uses U-Boot by default via nixos-raspberrypi.
+        # O Raspberry Pi 4 usa U-Boot por padrão via nixos-raspberrypi.
         generic-extlinux-compatible.configurationLimit = maxBootImages;
 
-        # Also limit generations if switching to the direct kernel bootloader.
+        # Também limita as gerações se trocar para o bootloader direto do kernel.
         raspberry-pi.configurationLimit = maxBootImages;
       };
   };
 
-  # Optimization: Prevent CPU clock scaling to reduce stutter
+  # Otimização: impede o ajuste dinâmico da frequência da CPU para reduzir engasgos
   powerManagement.cpuFreqGovernor = "performance";
 
   hardware = {
-    xpadneo.enable = true; # Xbox controller support
-    graphics.enable = true; # GPU support
+    xpadneo.enable = true; # Suporte a controle Xbox
+    graphics.enable = true; # Suporte à GPU
   };
 
   system.stateVersion = "26.05";
