@@ -92,7 +92,7 @@
 
   # Graphics support and hardware gpu acceleration
   boot = {
-    kernelParams = [ "cma=512M" ];
+    kernelParams = [ "cma=1024M" ];
     kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
     kernelModules = [
       "vc4"
