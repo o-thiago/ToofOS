@@ -62,9 +62,7 @@
         "argononed": "argononed",
         "flake-compat": "flake-compat",
         "nixos-images": "nixos-images",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs"
       },
       "locked": {
         "lastModified": 1775857096,
@@ -83,22 +81,23 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1777077449,
-        "narHash": "sha256-AIiMJiqvGrN4HyLEbKAoCSRRYn0rnlW5VbKNIMIYqm4=",
-        "rev": "a4bf06618f0b5ee50f14ed8f0da77d34ecc19160",
-        "revCount": 911667,
-        "type": "tarball",
-        "url": "https://api.flakehub.com/f/pinned/NixOS/nixpkgs/0.2511.911667%2Brev-a4bf06618f0b5ee50f14ed8f0da77d34ecc19160/019dcae8-75b0-71d1-abd5-feab9658f0fa/source.tar.gz?rev=a4bf06618f0b5ee50f14ed8f0da77d34ecc19160&revCount=911667"
+        "lastModified": 1778737229,
+        "narHash": "sha256-6xWoytx8jFW4PF1GjRm/i/53trbpKGfz6zjzQGBr4cI=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d7a713c0b7e47c908258e71cba7a2d77cc8d71d5",
+        "type": "github"
       },
       "original": {
-        "type": "tarball",
-        "url": "https://flakehub.com/f/NixOS/nixpkgs/0"
+        "owner": "NixOS",
+        "ref": "nixos-25.11",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "root": {
       "inputs": {
-        "nixos-raspberrypi": "nixos-raspberrypi",
-        "nixpkgs": "nixpkgs"
+        "nixos-raspberrypi": "nixos-raspberrypi"
       }
     }
   },

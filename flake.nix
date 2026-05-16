@@ -11,18 +11,13 @@
   };
 
   inputs = {
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0";
-    nixos-raspberrypi = {
-      url = "github:nvmd/nixos-raspberrypi/main";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
   };
 
   outputs =
-    inputs@{ nixpkgs, nixos-raspberrypi, ... }:
+    inputs@{ nixos-raspberrypi, ... }:
     {
       nixosConfigurations.toofos = nixos-raspberrypi.lib.nixosSystem {
-        inherit nixpkgs;
         specialArgs = inputs;
         modules = [
           ./system/configuration.nix
