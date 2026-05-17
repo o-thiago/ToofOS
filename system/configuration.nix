@@ -69,7 +69,6 @@
     isNormalUser = true;
     description = "gamer";
     initialPassword = "gamer";
-    shell = pkgs.fish;
     extraGroups = [
       "networkmanager"
       "wheel"
@@ -100,8 +99,7 @@
   programs = {
     gamescope.enable = true;
     git.enable = true;
-    fish.enable = true;
-    neovim = {
+    vim = {
       enable = true;
       defaultEditor = true;
     };
