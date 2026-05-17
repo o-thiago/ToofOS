@@ -11,12 +11,6 @@
       "noatime"
       "commit=120"
     ];
-
-    # Partição de boot padrão (FAT16), usada para o sistema genérico e extlinux
-    "/boot" = {
-      device = "/dev/disk/by-uuid/2178-694E";
-      fsType = "vfat";
-    };
   };
 
   nix = {
