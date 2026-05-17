@@ -14,10 +14,15 @@
   };
 
   nix = {
-    settings.experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
+    settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      # Otimiza o armazenamento hard-linkando arquivos idênticos na store do Nix.
+      # Isso economiza de 25% a 40% de espaço em disco continuamente.
+      auto-optimise-store = true;
+    };
 
     # Mantém apenas as 3 gerações mais recentes do sistema NixOS e coleta
     # automaticamente os caminhos da store que não são mais alcançáveis.
