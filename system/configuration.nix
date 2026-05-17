@@ -1,4 +1,7 @@
 { pkgs, nixpkgs, ... }:
+let
+  amountGenerations = 3;
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -29,7 +32,7 @@
     gc = {
       automatic = true;
       dates = "weekly";
-      options = "--delete-generations +3";
+      options = "--delete-generations +${toString amountGenerations}";
     };
 
     optimise = {
@@ -103,6 +106,7 @@
 
   programs = {
     gamescope.enable = true;
+    chromium.enable = true;
     git.enable = true;
     vim = {
       enable = true;
@@ -130,7 +134,7 @@
       # extlinux.conf em /boot sem tentar modificar os binários de firmware.
       generic-extlinux-compatible = {
         enable = true;
-        configurationLimit = 3;
+        configurationLimit = amountGenerations;
       };
     };
   };
