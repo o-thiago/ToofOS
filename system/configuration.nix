@@ -114,6 +114,16 @@ in
     };
   };
 
+  environment.systemPackages = with pkgs; [
+    ungoogled-chromium
+  ] ++ (with javaPackages.compiler.temurin-bin; [
+    jre-8
+    jre-11
+    jre-17
+    jre-21
+    jre-25
+  ]);
+
   boot = {
     # Usando o kernel padrão do NixOS ao invés do kernel customizado da
     # Raspberry (linux_rpi BCM 2711), que não está disponível no cache e
