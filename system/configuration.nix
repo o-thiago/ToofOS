@@ -106,8 +106,68 @@ in
 
   programs = {
     # Permite rodar binários compilados dinamicamente (como jogos e apps de fora
-    # do Nix) sem precisar empacotar cada um individualmente.
-    nix-ld.enable = true;
+    # do Nix) sem precisar empacotar cada um individualmente. As bibliotecas
+    # abaixo cobrem a grande maioria dos jogos e engines que provavelmente iremos usar no projeto. (Godot, SDL2, Unity, etc...).
+    nix-ld = {
+      enable = true;
+      libraries =
+        with pkgs;
+        [
+          # Gráficos e GPU
+          libGL
+          libGLU
+          vulkan-loader
+          mesa
+
+          # Wayland
+          wayland
+          libxkbcommon
+
+          # Áudio
+          alsa-lib
+          libpulseaudio
+          pipewire
+
+          # Input e controles
+          libusb1
+          udev
+
+          # Rede e web
+          curl
+          openssl
+
+          # Fontes e texto
+          fontconfig
+          freetype
+
+          # Imagem e mídia
+          libpng
+          libjpeg
+          zlib
+
+          # Sistema e runtime
+          stdenv.cc.cc.lib # libstdc++
+          glib
+          dbus
+          libdrm
+        ]
+        ++ (with xorg; [
+          # X11 e cursores
+          libX11
+          libXcursor
+          libXrandr
+          libXinerama
+          libXi
+          libXext
+          libXfixes
+          libXrender
+          libXcomposite
+          libXdamage
+          libXtst
+          libXScrnSaver
+          libxcb
+        ]);
+    };
 
     gamescope.enable = true;
     chromium.enable = true;
@@ -118,15 +178,18 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    ungoogled-chromium
-  ] ++ (with javaPackages.compiler.temurin-bin; [
-    jre-8
-    jre-11
-    jre-17
-    jre-21
-    jre-25
-  ]);
+  environment.systemPackages =
+    with pkgs;
+    [
+      ungoogled-chromium
+    ]
+    ++ (with javaPackages.compiler.temurin-bin; [
+      jre-8
+      jre-11
+      jre-17
+      jre-21
+      jre-25
+    ]);
 
   boot = {
     # Usando o kernel padrão do NixOS ao invés do kernel customizado da
