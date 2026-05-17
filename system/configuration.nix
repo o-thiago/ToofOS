@@ -105,6 +105,10 @@ in
   };
 
   programs = {
+    # Permite rodar binários compilados dinamicamente (como jogos e apps de fora
+    # do Nix) sem precisar empacotar cada um individualmente.
+    nix-ld.enable = true;
+
     gamescope.enable = true;
     chromium.enable = true;
     git.enable = true;
