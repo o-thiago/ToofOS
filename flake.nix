@@ -12,10 +12,11 @@
 
   inputs = {
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
+    nixpkgs.follows = "nixos-raspberrypi/nixpkgs";
   };
 
   outputs =
-    inputs@{ nixos-raspberrypi, ... }:
+    inputs@{ nixos-raspberrypi, nixpkgs, ... }:
     {
       nixosConfigurations.toofos = nixos-raspberrypi.lib.nixosSystem {
         specialArgs = inputs;

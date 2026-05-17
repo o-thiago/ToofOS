@@ -1,15 +1,23 @@
-{ pkgs, ... }:
+{ pkgs, nixpkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
   ];
 
-  # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
-  # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
-  fileSystems."/".options = [
-    "noatime"
-    "commit=120"
-  ];
+  fileSystems = {
+    # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
+    # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
+    "/".options = [
+      "noatime"
+      "commit=120"
+    ];
+
+    # Partição de boot padrão (FAT16), usada para o sistema genérico e extlinux
+    "/boot" = {
+      device = "/dev/disk/by-uuid/2178-694E";
+      fsType = "vfat";
+    };
+  };
 
   nix = {
     settings.experimental-features = [
@@ -106,20 +114,28 @@
   };
 
   boot = {
+    # Usando o kernel padrão do NixOS ao invés do kernel customizado da
+    # Raspberry (linux_rpi BCM 2711), que não está disponível no cache e
+    # acaba sendo compilado do zero, lotando o armazenamento do Pi 4.
+    kernelPackages = nixpkgs.legacyPackages.aarch64-linux.linuxPackages;
+
     # Mantém uma área maior de memória contígua para cargas gráficas.
     kernelParams = [ "cma=1024M" ];
 
-    loader =
-      let
-        maxBootImages = 3;
-      in
-      {
-        # O Raspberry Pi 4 usa U-Boot por padrão via nixos-raspberrypi.
-        generic-extlinux-compatible.configurationLimit = maxBootImages;
+    loader = {
+      grub.enable = false;
 
-        # Também limita as gerações se trocar para o bootloader direto do kernel.
-        raspberry-pi.configurationLimit = maxBootImages;
+      # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
+      # já que a partição de firmware é travada/indisponível no cartão SD.
+      raspberry-pi.enable = pkgs.lib.mkForce false;
+
+      # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
+      # extlinux.conf em /boot sem tentar modificar os binários de firmware.
+      generic-extlinux-compatible = {
+        enable = true;
+        configurationLimit = 3;
       };
+    };
   };
 
   # Otimização: impede o ajuste dinâmico da frequência da CPU para reduzir engasgos
