@@ -105,67 +105,89 @@ in
   };
 
   programs = {
-    # Permite rodar binários compilados dinamicamente (como jogos e apps de fora
-    # do Nix) sem precisar empacotar cada um individualmente. As bibliotecas
-    # abaixo cobrem a grande maioria dos jogos e engines que provavelmente iremos usar no projeto. (Godot, SDL2, Unity, etc...).
-    nix-ld = {
+    # Permite rodar binários compilados dinamicamente (como jogos e apps de fora do Nix) sem precisar empacotar cada um individualmente.
+    # As bibliotecas abaixo cobrem a grande maioria dos jogos e engines que provavelmente iremos usar no projeto. (Godot, SDL2, Unity, etc...).
+    # Esta lista é baseada no ambiente de runtime da Steam: https://github.com/ValveSoftware/steam-runtime/blob/master/build-runtime.py
+    programs.nix-ld = {
       enable = true;
       libraries =
         with pkgs;
         [
           # Gráficos e GPU
           libGL
-          libGLU
-          vulkan-loader
+          libdrm
           mesa
+          vulkan-loader
 
           # Wayland
-          wayland
           libxkbcommon
+          wayland
 
           # Áudio
           alsa-lib
           libpulseaudio
           pipewire
 
-          # Input e controles
-          libusb1
-          udev
+          # Toolkit de Interface (GUI) e Acessibilidade
+          at-spi2-atk
+          at-spi2-core
+          atk
+          cairo
+          gdk-pixbuf
+          gtk3
+          pango
 
-          # Rede e web
+          # Notificações, Status e Impressão
+          cups
+          libappindicator-gtk3
+          libnotify
+
+          # Rede e Segurança Web
           curl
+          nspr
+          nss
           openssl
 
-          # Fontes e texto
+          # Fontes e Texto
           fontconfig
           freetype
 
-          # Imagem e mídia
-          libpng
-          libjpeg
-          zlib
+          # Dispositivos, USB e Sistemas de Arquivos
+          fuse3
+          libusb1
 
-          # Sistema e runtime
-          stdenv.cc.cc.lib # libstdc++
-          glib
+          # Sistema, Utilitários e Runtime
           dbus
-          libdrm
+          expat
+          glib
+          libelf
+          libuuid
+          stdenv.cc.cc.lib # libstdc++
+          systemd
+          zlib
         ]
         ++ (with xorg; [
-          # X11 e cursores
+          # Funcionalidades base do servidor X11
           libX11
-          libXcursor
-          libXrandr
-          libXinerama
-          libXi
+          libxcb
+
+          # Gerenciamento de janelas e renderização X11
+          libXcomposite
+          libXdamage
           libXext
           libXfixes
           libXrender
-          libXcomposite
-          libXdamage
+
+          # Interação e periféricos X11
+          libXcursor
+          libXi
           libXtst
+          libxkbfile
+
+          # Telas e utilitários X11
           libXScrnSaver
-          libxcb
+          libXrandr
+          libxshmfence
         ]);
     };
 

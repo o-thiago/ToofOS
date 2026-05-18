@@ -16,7 +16,7 @@
   };
 
   outputs =
-    inputs@{ nixos-raspberrypi, nixpkgs, ... }:
+    inputs@{ nixos-raspberrypi, ... }:
     {
       nixosConfigurations.toofos = nixos-raspberrypi.lib.nixosSystem {
         specialArgs = inputs;
