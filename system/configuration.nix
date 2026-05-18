@@ -102,6 +102,15 @@ in
       enable = true;
       wayland.enable = true;
     };
+    # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
+    # para melhorar a responsividade do sistema e diminuir gargalos em jogos.
+    # O ajuste é feito baseado em uma lista predeterminada de regras (cachyos)
+    # e não através de detecção do que é ou não um jogo.
+    ananicy = {
+      enable = true;
+      package = pkgs.ananicy-cpp;
+      rulesProvider = pkgs.ananicy-rules-cachyos;
+    };
   };
 
   programs = {
