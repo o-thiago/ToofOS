@@ -1,6 +1,7 @@
 { pkgs, nixpkgs, ... }:
 let
   amountGenerations = 3;
+  daccStation = pkgs.callPackage ../packages/dacc_station.nix { };
 in
 {
   imports = [
@@ -117,7 +118,7 @@ in
     # Permite rodar binários compilados dinamicamente (como jogos e apps de fora do Nix) sem precisar empacotar cada um individualmente.
     # As bibliotecas abaixo cobrem a grande maioria dos jogos e engines que provavelmente iremos usar no projeto. (Godot, SDL2, Unity, etc...).
     # Esta lista é baseada no ambiente de runtime da Steam: https://github.com/ValveSoftware/steam-runtime/blob/master/build-runtime.py
-    programs.nix-ld = {
+    nix-ld = {
       enable = true;
       libraries =
         with pkgs;
@@ -212,6 +213,7 @@ in
   environment.systemPackages =
     with pkgs;
     [
+      daccStation
       ungoogled-chromium
     ]
     ++ (with javaPackages.compiler.temurin-bin; [
@@ -221,6 +223,8 @@ in
       jre-21
       jre-25
     ]);
+
+  environment.etc."xdg/autostart/dacc-station.desktop".source = "${daccStation}/share/applications/dacc-station.desktop";
 
   boot = {
     # Usando o kernel padrão do NixOS ao invés do kernel customizado da
