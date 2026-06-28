@@ -175,6 +175,8 @@ in
           stdenv.cc.cc.lib # libstdc++
           systemd
           zlib
+
+          glibc # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
         ]
         ++ (with xorg; [
           # Funcionalidades base do servidor X11
@@ -198,6 +200,8 @@ in
           libXScrnSaver
           libXrandr
           libxshmfence
+
+          libXinerama # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
         ]);
     };
 
@@ -224,17 +228,14 @@ in
       jre-25
     ]);
 
-  environment.etc."xdg/autostart/dacc-station.desktop".source = "${daccStation}/share/applications/dacc-station.desktop";
+  environment.etc."xdg/autostart/dacc-station.desktop".source =
+    "${daccStation}/share/applications/dacc-station.desktop";
 
   boot = {
     # Usando o kernel padrão do NixOS ao invés do kernel customizado da
     # Raspberry (linux_rpi BCM 2711), que não está disponível no cache e
     # acaba sendo compilado do zero, lotando o armazenamento do Pi 4.
     kernelPackages = nixpkgs.legacyPackages.aarch64-linux.linuxPackages;
-
-    # Mantém uma área maior de memória contígua para cargas gráficas.
-    kernelParams = [ "cma=1024M" ];
-
     loader = {
       grub.enable = false;
 
@@ -257,6 +258,7 @@ in
   hardware = {
     xpadneo.enable = true; # Suporte a controle Xbox
     graphics.enable = true; # Suporte à GPU
+    uinput.enable = true; # Melhor suporte a controles não convencionais. Tal como DUALSHOCK 4 em modo wireless.
   };
 
   system.stateVersion = "26.05";
