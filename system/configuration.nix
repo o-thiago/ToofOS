@@ -57,9 +57,10 @@ in
     };
   };
 
-  # Otimiza a memória para 8 GB de RAM usando zram
+  # Otimiza a memória para 8 GB de RAM usando zram com lz4 (menor sobrecarga de CPU especificamente em ARM)
   zramSwap = {
     enable = true;
+    algorithm = "lz4";
     memoryPercent = 50;
   };
 
@@ -84,6 +85,8 @@ in
       "video"
       "render"
       "input"
+      "pipewire"
+      "dialout"
     ];
   };
 
