@@ -1,4 +1,4 @@
-{ pkgs, nixpkgs, ... }:
+{ pkgs, ... }:
 let
   amountGenerations = 3;
   daccStation = pkgs.callPackage ../packages/dacc_station.nix { };
@@ -19,13 +19,21 @@ in
 
   nix = {
     settings = {
+      # Otimiza o armazenamento hard-linkando arquivos idênticos na store do Nix.
+      # Isso economiza de 25% a 40% de espaço em disco continuamente.
+      auto-optimise-store = true;
       experimental-features = [
         "nix-command"
         "flakes"
       ];
-      # Otimiza o armazenamento hard-linkando arquivos idênticos na store do Nix.
-      # Isso economiza de 25% a 40% de espaço em disco continuamente.
-      auto-optimise-store = true;
+      extra-substituters = [ "https://nixos-raspberrypi.cachix.org" ];
+      extra-trusted-public-keys = [
+        "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+      ];
+      trusted-users = [
+        "root"
+        "@wheel"
+      ];
     };
 
     # Mantém apenas as 3 gerações mais recentes do sistema NixOS e coleta
@@ -234,24 +242,18 @@ in
   environment.etc."xdg/autostart/dacc-station.desktop".source =
     "${daccStation}/share/applications/dacc-station.desktop";
 
-  boot = {
-    # Usando o kernel padrão do NixOS ao invés do kernel customizado da
-    # Raspberry (linux_rpi BCM 2711), que não está disponível no cache e
-    # acaba sendo compilado do zero, lotando o armazenamento do Pi 4.
-    kernelPackages = nixpkgs.legacyPackages.aarch64-linux.linuxPackages;
-    loader = {
-      grub.enable = false;
+  boot.loader = {
+    grub.enable = false;
 
-      # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
-      # já que a partição de firmware é travada/indisponível no cartão SD.
-      raspberry-pi.enable = pkgs.lib.mkForce false;
+    # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
+    # já que a partição de firmware é travada/indisponível no cartão SD.
+    raspberry-pi.enable = pkgs.lib.mkForce false;
 
-      # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
-      # extlinux.conf em /boot sem tentar modificar os binários de firmware.
-      generic-extlinux-compatible = {
-        enable = true;
-        configurationLimit = amountGenerations;
-      };
+    # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
+    # extlinux.conf em /boot sem tentar modificar os binários de firmware.
+    generic-extlinux-compatible = {
+      enable = true;
+      configurationLimit = amountGenerations;
     };
   };
 
