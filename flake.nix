@@ -19,9 +19,15 @@
       ];
 
       perSystem =
-        { pkgs, ... }:
+        { pkgs, system, ... }:
         {
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
+
           formatter = pkgs.nixfmt-tree;
+          packages.dacc-station = pkgs.callPackage ./packages/dacc_station.nix { };
         };
 
       flake.nixosConfigurations.toofos = inputs.nixos-raspberrypi.lib.nixosSystem {

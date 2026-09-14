@@ -15,13 +15,11 @@
   bluez,
   brightnessctl,
   coreutils,
-  glibc,
-  mpv,
+  mpv-unwrapped,
   networkmanager,
-  pipewire,
   pulseaudio,
   util-linux,
-  wayland-utils,
+  wireplumber,
   wlr-randr,
   xrandr,
 }:
@@ -34,13 +32,11 @@ let
       bluez
       brightnessctl
       coreutils
-      glibc
-      mpv
+      mpv-unwrapped
       networkmanager
-      pipewire
       pulseaudio
       util-linux
-      wayland-utils
+      wireplumber
       wlr-randr
       xrandr
     ];
@@ -54,32 +50,21 @@ let
 
       cd "$runtime_dir"
 
-      # Start background daemons
+      trap 'kill $(jobs -p) 2>/dev/null || true' EXIT INT TERM
+
       "$station_root/bin/log-server" &
-      pid_log=$!
-
       "$station_root/bin/process-manager" &
-      pid_pm=$!
 
-      # Trap ensures background processes are killed when the UI closes or script ends.
-      trap 'kill $pid_log $pid_pm 2>/dev/null || true' EXIT INT TERM
-
-      # Wait for Unix sockets to be created (max 10 seconds) before launching the UI
-      timeout=100
-      while [ ! -S "/tmp/dacc-station.sock" ] || [ ! -S "/tmp/gameman.sock" ]; do
+      for _ in $(seq 1 50); do
+        [ -S "/tmp/dacc-station.sock" ] && [ -S "/tmp/gameman.sock" ] && break
         sleep 0.1
-        timeout=$((timeout - 1))
-        if [ "$timeout" -le 0 ]; then
-          echo "Error: Timeout waiting for daemons to create sockets." >&2
-          exit 1
-        fi
       done
 
-      # Run the UI synchronously (do NOT use 'exec' or the trap will be bypassed!)
-      "$station_root/bin/dacc-ui"
+      "$station_root/bin/dacc-ui" "$@"
     '';
   };
-in stdenv.mkDerivation rec {
+in
+stdenv.mkDerivation {
   pname = "dacc-station";
   version = "0-unstable-2026-06-13";
 
@@ -103,6 +88,9 @@ in stdenv.mkDerivation rec {
     SDL2_ttf
   ];
 
+  strictDeps = true;
+  enableParallelBuilding = true;
+
   makeFlags = [ "CXX=${stdenv.cc.targetPrefix}c++" ];
 
   env.NIX_CFLAGS_COMPILE = "-I${SDL2.dev}/include/SDL2";
@@ -122,13 +110,16 @@ in stdenv.mkDerivation rec {
     runHook preInstall
 
     stationRoot="$out/share/dacc-station"
-    mkdir -p "$stationRoot" "$out/bin"
+    mkdir -p "$stationRoot/bin" "$stationRoot/ui" "$stationRoot/process-manager" "$out/bin"
 
-    cp -R bin config-dacc games process-manager ui "$stationRoot"/
+    cp bin/* "$stationRoot/bin/"
+    cp -R games "$stationRoot/"
+    cp process-manager/config.json "$stationRoot/process-manager/"
+    cp -R ui/assets "$stationRoot/ui/"
+    ln -s ui/assets "$stationRoot/assets"
 
     makeWrapper "${launcher}/bin/dacc-station" "$out/bin/dacc-station" \
-      --set DACC_STATION_ROOT "$stationRoot" \
-      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath buildInputs}
+      --set DACC_STATION_ROOT "$stationRoot"
 
     runHook postInstall
   '';
