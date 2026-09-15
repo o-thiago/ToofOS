@@ -130,89 +130,85 @@ in
     # Esta lista é baseada no ambiente de runtime da Steam: https://github.com/ValveSoftware/steam-runtime/blob/master/build-runtime.py
     nix-ld = {
       enable = true;
-      libraries =
-        with pkgs;
-        [
-          # Gráficos e GPU
-          libGL
-          libdrm
-          mesa
-          vulkan-loader
+      libraries = with pkgs; [
+        # Gráficos e GPU
+        libGL
+        libdrm
+        mesa
+        vulkan-loader
 
-          # Wayland
-          libxkbcommon
-          wayland
+        # Wayland
+        libxkbcommon
+        wayland
 
-          # Áudio
-          alsa-lib
-          libpulseaudio
-          pipewire
+        # Áudio
+        alsa-lib
+        libpulseaudio
+        pipewire
 
-          # Toolkit de Interface (GUI) e Acessibilidade
-          at-spi2-atk
-          at-spi2-core
-          atk
-          cairo
-          gdk-pixbuf
-          gtk3
-          pango
+        # Toolkit de Interface (GUI) e Acessibilidade
+        at-spi2-atk
+        at-spi2-core
+        atk
+        cairo
+        gdk-pixbuf
+        gtk3
+        pango
 
-          # Notificações, Status e Impressão
-          cups
-          libappindicator-gtk3
-          libnotify
+        # Notificações, Status e Impressão
+        cups
+        libappindicator-gtk3
+        libnotify
 
-          # Rede e Segurança Web
-          curl
-          nspr
-          nss
-          openssl
+        # Rede e Segurança Web
+        curl
+        nspr
+        nss
+        openssl
 
-          # Fontes e Texto
-          fontconfig
-          freetype
+        # Fontes e Texto
+        fontconfig
+        freetype
 
-          # Dispositivos, USB e Sistemas de Arquivos
-          fuse3
-          libusb1
+        # Dispositivos, USB e Sistemas de Arquivos
+        fuse3
+        libusb1
 
-          # Sistema, Utilitários e Runtime
-          dbus
-          expat
-          glib
-          libelf
-          libuuid
-          stdenv.cc.cc.lib # libstdc++
-          systemd
-          zlib
+        # Sistema, Utilitários e Runtime
+        dbus
+        expat
+        glib
+        libelf
+        libuuid
+        stdenv.cc.cc.lib # libstdc++
+        systemd
+        zlib
 
-          glibc # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
-        ]
-        ++ (with xorg; [
-          # Funcionalidades base do servidor X11
-          libX11
-          libxcb
+        glibc # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
+        # Funcionalidades base do servidor X11
+        libX11
+        libxcb
 
-          # Gerenciamento de janelas e renderização X11
-          libXcomposite
-          libXdamage
-          libXext
-          libXfixes
-          libXrender
+        # Gerenciamento de janelas e renderização X11
+        libXcomposite
+        libXdamage
+        libXext
+        libXfixes
+        libXrender
 
-          # Interação e periféricos X11
-          libXcursor
-          libXi
-          libXtst
-          libxkbfile
+        # Interação e periféricos X11
+        libXcursor
+        libXi
+        libXtst
+        libxkbfile
 
-          # Telas e utilitários X11
-          libXScrnSaver
-          libXrandr
-          libxshmfence
+        # Telas e utilitários X11
+        libXScrnSaver
+        libXrandr
+        libxshmfence
 
-          libXinerama # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
-        ]);
+        libXinerama # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
+      ];
     };
 
     gamescope.enable = true;
