@@ -1,7 +1,6 @@
 { pkgs, ... }:
 let
   amountGenerations = 3;
-  daccStation = pkgs.callPackage ../packages/dacc_station.nix { };
 in
 {
   imports = [
@@ -225,22 +224,27 @@ in
     };
   };
 
-  environment.systemPackages =
-    with pkgs;
-    [
-      daccStation
-      ungoogled-chromium
-    ]
-    ++ (with javaPackages.compiler.temurin-bin; [
-      jre-8
-      jre-11
-      jre-17
-      jre-21
-      jre-25
-    ]);
-
-  environment.etc."xdg/autostart/dacc-station.desktop".source =
-    "${daccStation}/share/applications/dacc-station.desktop";
+  environment =
+    let
+      dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
+    in
+    {
+      etc."xdg/autostart/dacc-station.desktop".source =
+        "${dacc-station}/share/applications/dacc-station.desktop";
+      systemPackages =
+        with pkgs;
+        [
+          dacc-station
+          ungoogled-chromium
+        ]
+        ++ (with javaPackages.compiler.temurin-bin; [
+          jre-8
+          jre-11
+          jre-17
+          jre-21
+          jre-25
+        ]);
+    };
 
   boot.loader = {
     grub.enable = false;
