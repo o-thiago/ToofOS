@@ -134,6 +134,8 @@ in
       enable = true;
       enableQt5Integration = false; # Sistema puramente Qt6, economizando RAM e armazenamento
     };
+    fwupd.enable = false; # Desativa atualizador de firmware e loja Discover
+
     # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
     # para melhorar a responsividade do sistema e diminuir gargalos em jogos.
     # O ajuste é feito baseado em uma lista predeterminada de regras (cachyos)
@@ -260,21 +262,9 @@ in
       qrca # Scanner de QR Code via câmera (ativado por padrão com NetworkManager)
     ];
 
-    systemPackages =
-      with pkgs;
-      [
-        dacc-station
-        kdePackages.kate
-        antimicrox
-        wvkbd
-      ]
-      ++ (with javaPackages.compiler.temurin-bin; [
-        jre-8
-        jre-11
-        jre-17
-        jre-21
-        jre-25
-      ]);
+    systemPackages = with pkgs; [
+      dacc-station
+    ];
 
     etc = {
       # Autostart padrão XDG para inicializar o DACC Station automaticamente ao iniciar a sessão gráfica
@@ -317,15 +307,16 @@ in
         configurationLimit = amountGenerations;
       };
     };
+
+    kernelParams = [ "cpufreq.default_governor=performance" ];
   };
 
-  # Otimização: impede o ajuste dinâmico da frequência da CPU para reduzir engasgos
-  powerManagement.cpuFreqGovernor = "performance";
-
   hardware = {
-    xpadneo.enable = true; # Suporte a controle Xbox
-    graphics.enable = true; # Suporte à GPU
-    uinput.enable = true; # Melhor suporte a controles não convencionais. Tal como DUALSHOCK 4 em modo wireless.
+    # Desativa download do linux-firmware genérico (Intel/AMD/Mellanox x86) economizando ~1.5 GB.
+    # O firmware do Raspberry Pi 4 (Wi-Fi Broadcom e VideoCore) é fornecido nativamente pelo nixos-raspberrypi.
+    enableRedistributableFirmware = pkgs.lib.mkForce false;
+    graphics.enable = true; # Suporte à GPU VideoCore VI
+    uinput.enable = true; # Suporte a controles avançados (DualShock 4, Steam controller, etc.)
   };
 
   system.stateVersion = "26.05";
