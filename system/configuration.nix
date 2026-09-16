@@ -1,5 +1,6 @@
 { pkgs, ... }:
 let
+  userName = "gamer";
   amountGenerations = 3;
   dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
 in
@@ -8,14 +9,12 @@ in
     ./hardware-configuration.nix
   ];
 
-  fileSystems = {
-    # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
-    # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
-    "/".options = [
-      "noatime"
-      "commit=120"
-    ];
-  };
+  # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
+  # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
+  fileSystems."/".options = [
+    "noatime"
+    "commit=120"
+  ];
 
   nix = {
     settings = {
@@ -69,7 +68,7 @@ in
   zramSwap = {
     enable = true;
     algorithm = "lz4";
-    memoryPercent = 50;
+    memoryPercent = 100;
   };
 
   security = {
@@ -83,10 +82,10 @@ in
   i18n.defaultLocale = "pt_BR.UTF-8";
   console.keyMap = "br-abnt2";
 
-  users.users.gamer = {
+  users.users.${userName} = {
     isNormalUser = true;
-    description = "gamer";
-    initialPassword = "gamer";
+    description = userName;
+    initialPassword = userName;
     extraGroups = [
       "networkmanager"
       "wheel"
@@ -98,6 +97,11 @@ in
     ];
   };
 
+  # Evita que a inicialização trave por até 30s aguardando conexão de rede caso o console
+  # inicialize offline ou com Wi-Fi lento. A interface gráfica e os jogos inicializam
+  # imediatamente, enquanto a rede conecta em segundo plano.
+  systemd.services.NetworkManager-wait-online.enable = false;
+
   services = {
     openssh.enable = true;
     pipewire = {
@@ -106,7 +110,9 @@ in
       jack.enable = true;
       alsa = {
         enable = true;
-        support32Bit = true;
+        # Não usamos support32Bit pois o Raspberry Pi 4 roda puramente em arquitetura
+        # 64 bits (aarch64-linux), sem suporte ou necessidade de bibliotecas multilib x86/32 bits.
+        support32Bit = false;
       };
     };
 
@@ -121,7 +127,7 @@ in
       defaultSession = "plasma";
       autoLogin = {
         enable = true;
-        user = "gamer";
+        user = userName;
       };
       sddm = {
         enable = true;
@@ -246,6 +252,11 @@ in
     systemPackages = with pkgs; [
       dacc-station
       brave-origin
+
+      # Ferramentas padrão de benchmarking para jogos e latência de entrada
+      mangohud # Overlay oficial com FPS médio, 1% low, 0.1% low, toggle via F12 e log em CSV
+      evtest # Ferramenta padrão para testar e medir eventos e latência de periféricos/gamepads
+      glmark2 # Benchmark padrão OpenGL ES 2.0 / Wayland
     ];
 
     # Remove aplicativos do Plasma que não fazem sentido em um console,
@@ -283,6 +294,39 @@ in
       "xdg/baloofilerc".text = ''
         [Basic Settings]
         Indexing-Enabled=false
+      '';
+
+      # Configuração do KWin Wayland para baixa latência e economia de GPU no VideoCore VI
+      "xdg/kwinrc".text = ''
+        [Compositing]
+        AnimationSpeed=0
+        LatencyPolicy=Extreme
+
+        [Plugins]
+        blurEnabled=false
+        contrastEnabled=false
+        slideEnabled=false
+        fadeEnabled=false
+        zoomEnabled=false
+
+        # Desativa a Luz Noturna (Night Light / Night Color) do KDE Plasma para evitar tela amarelada
+        [NightColor]
+        Active=false
+      '';
+
+      # Configuração global do MangoHud para o ToofOS (Average FPS, 1% low, 0.1% low e toggle F12)
+      "MangoHud.conf".text = ''
+        fps
+        frametime=1
+        fps_metrics=avg,1,0.1
+        toggle_hud=F12
+        toggle_logging=F2
+        benchmark_percentiles=99,99.9
+        output_folder=/home/${userName}/benchmarks
+        position=top-left
+        font_size=18
+        round_corners=5
+        background_alpha=0.6
       '';
     };
   };
