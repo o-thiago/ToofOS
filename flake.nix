@@ -4,6 +4,7 @@
   inputs = {
     nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
     nixpkgs.follows = "nixos-raspberrypi/nixpkgs";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -39,6 +40,13 @@
               raspberry-pi-4.base
               raspberry-pi-4.display-vc4
               raspberry-pi-4.bluetooth
+            ];
+
+            nixpkgs.overlays = [
+              (final: prev: {
+                brave-origin =
+                  inputs.nixpkgs-unstable.legacyPackages.${prev.stdenv.hostPlatform.system}.brave-origin;
+              })
             ];
           }
         ];

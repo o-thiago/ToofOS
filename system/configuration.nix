@@ -134,6 +134,7 @@ in
       enable = true;
       enableQt5Integration = false; # Sistema puramente Qt6, economizando RAM e armazenamento
     };
+
     fwupd.enable = false; # Desativa atualizador de firmware e loja Discover
 
     # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
@@ -234,7 +235,6 @@ in
       ];
     };
 
-    chromium.enable = true;
     git.enable = true;
     vim = {
       enable = true;
@@ -243,7 +243,10 @@ in
   };
 
   environment = {
-    systemPackages = [ dacc-station ];
+    systemPackages = with pkgs; [
+      dacc-station
+      brave-origin
+    ];
 
     # Remove aplicativos do Plasma que não fazem sentido em um console,
     # mantendo um desktop minimalista com apenas navegador e editor de texto.
