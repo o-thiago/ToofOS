@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
   amountGenerations = 3;
+  dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
 in
 {
   imports = [
@@ -72,9 +73,9 @@ in
   };
 
   security = {
-    # Necessário para Wayland
+    # Necessário para Wayland e sessões gráficas
     polkit.enable = true;
-    # Áudio de baixa latência para jogos
+    # Áudio de baixa latência para jogos (RTKit gerencia prioridades de tempo real via PipeWire)
     rtkit.enable = true;
   };
 
@@ -99,7 +100,6 @@ in
 
   services = {
     openssh.enable = true;
-    desktopManager.plasma6.enable = true;
     pipewire = {
       enable = true;
       pulse.enable = true;
@@ -109,9 +109,30 @@ in
         support32Bit = true;
       };
     };
-    displayManager.sddm = {
+
+    # Armazena logs do journal na memória RAM em vez de gravar continuamente no SD Card
+    journald.extraConfig = ''
+      Storage=volatile
+      SystemMaxUse=64M
+    '';
+
+    # Gerenciador de exibição com login automático na sessão Plasma 6 (Wayland)
+    displayManager = {
+      defaultSession = "plasma";
+      autoLogin = {
+        enable = true;
+        user = "gamer";
+      };
+      sddm = {
+        enable = true;
+        wayland.enable = true;
+      };
+    };
+
+    # Ambiente de Desktop: KDE Plasma 6 (KWin Wayland com Direct Scanout nativo)
+    desktopManager.plasma6 = {
       enable = true;
-      wayland.enable = true;
+      enableQt5Integration = false; # Sistema puramente Qt6, economizando RAM e armazenamento
     };
     # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
     # para melhorar a responsividade do sistema e diminuir gargalos em jogos.
@@ -211,7 +232,6 @@ in
       ];
     };
 
-    gamescope.enable = true;
     chromium.enable = true;
     git.enable = true;
     vim = {
@@ -220,40 +240,82 @@ in
     };
   };
 
-  environment =
-    let
-      dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
-    in
-    {
-      etc."xdg/autostart/dacc-station.desktop".source =
-        "${dacc-station}/share/applications/dacc-station.desktop";
-      systemPackages =
-        with pkgs;
-        [
-          dacc-station
-          ungoogled-chromium
-        ]
-        ++ (with javaPackages.compiler.temurin-bin; [
-          jre-8
-          jre-11
-          jre-17
-          jre-21
-          jre-25
-        ]);
+  environment = {
+    # Remove aplicativos do Plasma que não fazem sentido em um console,
+    # mantendo um desktop minimalista com apenas navegador e editor de texto.
+    plasma6.excludePackages = with pkgs.kdePackages; [
+      elisa # Player de música
+      gwenview # Visualizador de fotos
+      okular # Leitor de PDFs/documentos
+      ark # Gerenciador de arquivos compactados (.zip/.tar)
+      khelpcenter # Central de ajuda do KDE
+      spectacle # Ferramenta de captura de tela
+      krdp # Servidor de área de trabalho remota RDP
+      ffmpegthumbs # Gerador de miniaturas de vídeo
+      baloo-widgets # Widgets do indexador de arquivos
+      dolphin-plugins # Plugins de integração do Dolphin
+      kwin-x11 # Sessão X11 legada (sistema roda exclusivamente em Wayland)
+      dolphin # Gerenciador de arquivos completo
+      konsole # Terminal dedicado
+      qrca # Scanner de QR Code via câmera (ativado por padrão com NetworkManager)
+    ];
+
+    systemPackages =
+      with pkgs;
+      [
+        dacc-station
+        kdePackages.kate
+        antimicrox
+        wvkbd
+      ]
+      ++ (with javaPackages.compiler.temurin-bin; [
+        jre-8
+        jre-11
+        jre-17
+        jre-21
+        jre-25
+      ]);
+
+    etc = {
+      # Autostart padrão XDG para inicializar o DACC Station automaticamente ao iniciar a sessão gráfica
+      "xdg/autostart/dacc-station.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=DACC Station
+        Comment=Interface de console para jogos DACC Station
+        Exec=${dacc-station}/bin/dacc-station
+        Terminal=false
+        Categories=Game;
+      '';
+
+      # Desativa a indexação contínua de arquivos do Baloo para poupar CPU e desgaste do cartão SD
+      "xdg/baloofilerc".text = ''
+        [Basic Settings]
+        Indexing-Enabled=false
+      '';
+    };
+  };
+
+  boot = {
+    # Mover arquivos temporários para RAM, evitando lentidão do cartão SD
+    tmp = {
+      useTmpfs = true;
+      tmpfsSize = "2G";
     };
 
-  boot.loader = {
-    grub.enable = false;
+    loader = {
+      grub.enable = false;
 
-    # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
-    # já que a partição de firmware é travada/indisponível no cartão SD.
-    raspberry-pi.enable = pkgs.lib.mkForce false;
+      # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
+      # já que a partição de firmware é travada/indisponível no cartão SD.
+      raspberry-pi.enable = pkgs.lib.mkForce false;
 
-    # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
-    # extlinux.conf em /boot sem tentar modificar os binários de firmware.
-    generic-extlinux-compatible = {
-      enable = true;
-      configurationLimit = amountGenerations;
+      # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
+      # extlinux.conf em /boot sem tentar modificar os binários de firmware.
+      generic-extlinux-compatible = {
+        enable = true;
+        configurationLimit = amountGenerations;
+      };
     };
   };
 
