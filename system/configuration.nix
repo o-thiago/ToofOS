@@ -243,6 +243,8 @@ in
   };
 
   environment = {
+    systemPackages = [ dacc-station ];
+
     # Remove aplicativos do Plasma que não fazem sentido em um console,
     # mantendo um desktop minimalista com apenas navegador e editor de texto.
     plasma6.excludePackages = with pkgs.kdePackages; [
@@ -260,10 +262,6 @@ in
       dolphin # Gerenciador de arquivos completo
       konsole # Terminal dedicado
       qrca # Scanner de QR Code via câmera (ativado por padrão com NetworkManager)
-    ];
-
-    systemPackages = with pkgs; [
-      dacc-station
     ];
 
     etc = {
