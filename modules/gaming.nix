@@ -37,15 +37,33 @@ in
           postBuild = ''
             wrapProgram $out/bin/java \
               --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath (with pkgs; [
+                # Gráficos e GPU
                 libGL
+                libglvnd
+                mesa
+                vulkan-loader
+
+                # Wayland e Janelas
                 wayland
                 libxkbcommon
+                libdecor
+
+                # X11 / Xwayland
                 libX11
                 libXrandr
                 libXcursor
                 libXinerama
                 libXi
                 libXxf86vm
+                libXext
+                libXrender
+                libXfixes
+
+                # Áudio e C++ Runtime
+                alsa-lib
+                libpulseaudio
+                pipewire
+                stdenv.cc.cc.lib
               ])}"
           '';
         };
