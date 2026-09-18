@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 let
@@ -48,5 +49,9 @@ in
         defaultEditor = true;
       };
     };
+
+    environment.systemPackages = with pkgs; [
+      fastfetch
+    ];
   };
 }

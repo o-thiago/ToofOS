@@ -30,6 +30,11 @@ in
       rulesProvider = pkgs.ananicy-rules-cachyos;
     };
 
+    # Garante que a pasta de benchmarks exista para o MangoHud salvar logs e métricas
+    systemd.tmpfiles.rules = [
+      "d /home/${user}/benchmarks 0755 ${user} users -"
+    ];
+
     programs = {
       # Runtime Java (Eclipse Temurin JRE) com suporte a binfmt e bibliotecas gráficas/Wayland para LWJGL
       java = {
