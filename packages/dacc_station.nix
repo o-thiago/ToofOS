@@ -118,7 +118,7 @@ stdenv.mkDerivation {
     cp -R ui/assets "$stationRoot/ui/"
     ln -s ui/assets "$stationRoot/assets"
 
-    makeWrapper "${launcher}/bin/dacc-station" "$out/bin/dacc-station" \
+    makeWrapper "${lib.getExe launcher}" "$out/bin/dacc-station" \
       --set DACC_STATION_ROOT "$stationRoot"
 
     runHook postInstall

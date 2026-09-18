@@ -201,8 +201,8 @@ in
           if [ -z "$XDG_RUNTIME_DIR" ]; then
             export XDG_RUNTIME_DIR="/run/user/$(id -u)"
           fi
-          exec ${cage}/bin/cage -- ${bash}/bin/sh -c '
-            ${wlr-randr}/bin/wlr-randr --output HDMI-A-1 --mode 1280x720@60Hz 2>/dev/null || true
+          exec ${lib.getExe cage} -- ${lib.getExe' bash "sh"} -c '
+            ${lib.getExe wlr-randr} --output HDMI-A-1 --mode 1280x720@60Hz 2>/dev/null || true
             exec "$@"
           ' dummy "$@"
         '')
@@ -215,7 +215,7 @@ in
           Type=Application
           Name=DACC Station
           Comment=Interface de console para jogos DACC Station
-          Exec=${dacc-station}/bin/dacc-station
+          Exec=${lib.getExe dacc-station}
           Terminal=false
           Categories=Game;
         '';
