@@ -114,6 +114,7 @@ in
           libXScrnSaver
           libXrandr
           libxshmfence
+          libXxf86vm
 
           # Dependências necessária para os nossos jogos (não herdada da definição do Steam)
           glibc
