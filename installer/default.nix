@@ -12,6 +12,7 @@ let
       lib.makeBinPath (
         with pkgs;
         [
+          coreutils
           curl
           dosfstools
           e2fsprogs
@@ -19,13 +20,17 @@ let
           nixos-install-tools
           parted
           systemd
+          util-linux
         ]
       )
     }:$PATH"
 
-    DEV="/dev/mmcblk0"
+    DEV="''${1:-/dev/mmcblk0}"
     TARGET="/mnt/etc/nixos/toofos"
     REPO_URL="https://github.com/o-thiago/ToofOS.git"
+
+    DISK="/dev/$(lsblk -dno PKNAME "$DEV" 2>/dev/null || true)"
+    [ -b "$DISK" ] && DEV="$DISK"
 
     echo "Particionando e formatando $DEV..."
     umount -R /mnt 2>/dev/null || true
@@ -39,12 +44,17 @@ let
     partprobe "$DEV" || true
     udevadm settle 2>/dev/null || sleep 2
 
-    mkfs.vfat -F 32 -n FIRMWARE "''${DEV}p1"
-    mkfs.ext4 -F -O ^orphan_file,^metadata_csum_seed -L NIXOS_SD "''${DEV}p2"
+    BOOT_PART="''${DEV}p1"
+    [ -b "$BOOT_PART" ] || BOOT_PART="''${DEV}1"
+    ROOT_PART="''${DEV}p2"
+    [ -b "$ROOT_PART" ] || ROOT_PART="''${DEV}2"
 
-    mount "''${DEV}p2" /mnt
+    mkfs.vfat -F 32 -n FIRMWARE "$BOOT_PART"
+    mkfs.ext4 -F -O ^orphan_file,^metadata_csum_seed -L NIXOS_SD "$ROOT_PART"
+
+    mount "$ROOT_PART" /mnt
     mkdir -p /mnt/boot/firmware
-    mount "''${DEV}p1" /mnt/boot/firmware
+    mount "$BOOT_PART" /mnt/boot/firmware
 
     echo "Copiando arquivos de firmware da Raspberry Pi..."
     if [ -d /boot/firmware ] && [ -n "$(ls -A /boot/firmware 2>/dev/null)" ]; then
@@ -83,7 +93,9 @@ let
               curl
               dosfstools
               e2fsprogs
+              gawk
               git
+              gnugrep
               nix
               nixos-install-tools
               parted
@@ -93,31 +105,35 @@ let
           )
         }:$PATH"
 
-        DEV="/dev/mmcblk0"
+        DEV=""
         FAST_MODE=0
         FROM_INSTALLER=0
         DO_PULL=0
 
         show_help() {
           cat <<'EOF'
-    Uso: toofos-repair-boot [OPÇÕES] [DISPOSITIVO]
+    Uso: toofos-repair-boot [OPÇÕES] [DISPOSITIVO_OU_PARTIÇÃO]
 
-    Repara e atualiza o bootloader do ToofOS em um cartão SD existente,
+    Repara e atualiza o bootloader do ToofOS em uma instalação existente,
     permitindo aplicar alterações de boot sem reconstruir ou reinstalar todo o sistema.
 
     Argumentos:
-      DISPOSITIVO            Dispositivo de bloco do cartão SD (padrão: /dev/mmcblk0)
+      DISPOSITIVO_OU_PARTIÇÃO  Dispositivo de bloco ou partição (ex: /dev/mmcblk0, /dev/mmcblk0p2,
+                               /dev/sda, /dev/sda2, /dev/disk/by-label/NIXOS_SD).
+                               Padrão: /dev/mmcblk0 (ou auto-detecção por NIXOS_SD).
 
     Opções:
-      -f, --fast             Reinstala apenas o bootloader da geração atual sem compilar/rebuild
-      -i, --from-installer   Sincroniza /etc/toofos do instalador live para o cartão SD antes do rebuild
-      -p, --pull             Executa 'git pull' no repositório do ToofOS do cartão SD antes do rebuild
-      -h, --help             Exibe esta mensagem de ajuda
+      -f, --fast               Reinstala apenas o bootloader da geração atual sem compilar/rebuild
+      -i, --from-installer     Sincroniza /etc/toofos do instalador live para o cartão SD antes do rebuild
+      -p, --pull               Executa 'git pull' no repositório do ToofOS do cartão SD antes do rebuild
+      -h, --help               Exibe esta mensagem de ajuda
 
     Exemplos:
       toofos-repair-boot
       toofos-repair-boot --fast
-      toofos-repair-boot --from-installer /dev/mmcblk0
+      toofos-repair-boot /dev/mmcblk0
+      toofos-repair-boot /dev/mmcblk0p2
+      toofos-repair-boot --from-installer /dev/sda2
     EOF
         }
 
@@ -151,25 +167,30 @@ let
           esac
         done
 
+        DEV="''${DEV:-$(findfs LABEL=NIXOS_SD 2>/dev/null || echo /dev/mmcblk0)}"
+        DEV="$(readlink -f "$DEV")"
+        DISK="/dev/$(lsblk -dno PKNAME "$DEV" 2>/dev/null || true)"
+        [ -b "$DISK" ] && DEV="$DISK"
+
         if [ ! -b "$DEV" ]; then
           echo "Erro: Dispositivo '$DEV' não encontrado."
-          echo "Verifique se o cartão SD está inserido corretamente."
           exit 1
         fi
 
         partprobe "$DEV" 2>/dev/null || true
         udevadm settle 2>/dev/null || sleep 1
 
-        # Identifica as partições do dispositivo
-        if [ -b "''${DEV}p1" ] && [ -b "''${DEV}p2" ]; then
-          BOOT_PART="''${DEV}p1"
-          ROOT_PART="''${DEV}p2"
-        elif [ -b "''${DEV}1" ] && [ -b "''${DEV}2" ]; then
-          BOOT_PART="''${DEV}1"
-          ROOT_PART="''${DEV}2"
-        else
+        BOOT_PART="$(lsblk -no PATH,LABEL "$DEV" | awk '$2=="FIRMWARE" || $2=="TOOFOS_BOOT" {print $1; exit}')"
+        ROOT_PART="$(lsblk -no PATH,LABEL "$DEV" | awk '$2=="NIXOS_SD" {print $1; exit}')"
+        BOOT_PART="''${BOOT_PART:-$(lsblk -no PATH,FSTYPE "$DEV" | awk '$2=="vfat" {print $1; exit}')}"
+        ROOT_PART="''${ROOT_PART:-$(lsblk -no PATH,FSTYPE "$DEV" | awk '$2=="ext4" {print $1; exit}')}"
+        BOOT_PART="''${BOOT_PART:-''${DEV}p1}"
+        [ -b "$BOOT_PART" ] || BOOT_PART="''${DEV}1"
+        ROOT_PART="''${ROOT_PART:-''${DEV}p2}"
+        [ -b "$ROOT_PART" ] || ROOT_PART="''${DEV}2"
+
+        if [ ! -b "$BOOT_PART" ] || [ ! -b "$ROOT_PART" ] || [ "$BOOT_PART" = "$ROOT_PART" ]; then
           echo "Erro: Partições necessárias não encontradas em $DEV."
-          echo "Esperado: partição 1 (FIRMWARE) e partição 2 (NIXOS_SD)."
           exit 1
         fi
 
@@ -179,28 +200,27 @@ let
         }
         trap cleanup EXIT
 
-        echo "Desmontando pontos de montagem prévios em /mnt..."
         umount -R /mnt 2>/dev/null || true
-
-        echo "Verificando integridade dos sistemas de arquivos..."
         dosfsck -a "$BOOT_PART" 2>/dev/null || true
         e2fsck -p "$ROOT_PART" 2>/dev/null || true
 
-        echo "Montando $ROOT_PART em /mnt..."
         mount "$ROOT_PART" /mnt
         mkdir -p /mnt/boot/firmware
-        echo "Montando $BOOT_PART em /mnt/boot/firmware..."
         mount "$BOOT_PART" /mnt/boot/firmware
 
         TARGET="/mnt/etc/nixos/toofos"
+        [ -d "$TARGET" ] || TARGET="/mnt/etc/toofos"
+        [ -d "$TARGET" ] || TARGET="/mnt/etc/nixos"
 
-        # Validação rigorosa: este script aplica-se APENAS a cartões SD com ToofOS instalado
-        if [ ! -f /mnt/etc/NIXOS ] || [ ! -d "$TARGET" ] || [ ! -e /mnt/nix/var/nix/profiles/system ]; then
-          echo ""
+        if [ ! -e /mnt/nix/var/nix/profiles/system ]; then
           echo "Erro: O dispositivo $DEV não possui uma instalação válida do ToofOS."
-          echo "Este script aplica-se exclusivamente a cartões SD que já possuem o ToofOS instalado."
-          echo "Para formatar e fazer uma nova instalação completa, utilize 'toofos-install'."
           exit 1
+        fi
+
+        if [ ! -d "$TARGET" ]; then
+          mkdir -p "$TARGET"
+          cp -r /etc/toofos/* "$TARGET/" 2>/dev/null || true
+          chmod -R u+w "$TARGET" 2>/dev/null || true
         fi
 
         echo "Garantindo arquivos essenciais de firmware da Raspberry Pi..."
