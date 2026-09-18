@@ -13,11 +13,8 @@ in
 
   config = lib.mkIf cfg.enable {
     # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
-    # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
-    fileSystems."/".options = [
-      "noatime"
-      "commit=120"
-    ];
+    # atualizações de tempo de acesso.
+    fileSystems."/".options = [ "noatime" ];
 
     # Otimiza a memória para 8 GB de RAM usando zram com lz4 (menor sobrecarga de CPU em ARM)
     zramSwap = {
