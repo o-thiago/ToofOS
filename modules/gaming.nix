@@ -222,6 +222,45 @@ in
             exec "$@"
           ' dummy "$RES" "$@"
         '')
+
+        (writeShellScriptBin "toof-run" ''
+          if [ $# -eq 0 ]; then
+            echo "Uso: toof-run [-r resolução] <comando> [argumentos...]"
+            echo "Exemplos:"
+            echo "  toof-run ~/Downloads/RunnersHigh.arm64"
+            echo "  toof-run 1280x720 mangohud --dlsym ~/Downloads/RunnersHigh.arm64"
+            echo "  toof-run -r 1280x720@60 java -jar ~/Downloads/Synq.jar"
+            exit 1
+          fi
+
+          RES="''${RES:-}"
+          case "$1" in
+            -r|--res) RES="$2"; shift 2 ;;
+            [0-9]*x[0-9]*) RES="$1"; shift ;;
+          esac
+
+          KDOCTOR="${lib.getExe' pkgs.kdePackages.libkscreen "kscreen-doctor"}"
+
+          # Se estamos fora de uma sessão gráfica ativa, executa via cage-run
+          if [ -z "$WAYLAND_DISPLAY" ] && [ -z "$DISPLAY" ]; then
+            exec cage-run ''${RES:+-r "$RES"} "$@"
+          fi
+
+          if [ -n "$RES" ]; then
+            case "$RES" in
+              *@*) ;;
+              *x*) RES="''${RES}@60" ;;
+            esac
+
+            OLD_MODE=$($KDOCTOR -o 2>/dev/null | awk '/Modes:/ {for(i=1;i<=NF;i++) if($i ~ /\*/) {sub(/:.*/, "", $i); print $i; exit}}')
+            if [ -n "$OLD_MODE" ]; then
+              trap '$KDOCTOR "output.1.mode.'"$OLD_MODE"'" >/dev/null 2>&1 || true' EXIT INT TERM
+            fi
+            $KDOCTOR "output.1.mode.$RES" >/dev/null 2>&1 || true
+          fi
+
+          "$@"
+        '')
       ];
 
       etc = {
