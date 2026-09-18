@@ -193,18 +193,32 @@ in
         cage
         wlr-randr
 
-        (writeShellScriptBin "cage-720p" ''
+        (writeShellScriptBin "cage-run" ''
           if [ $# -eq 0 ]; then
-            echo "Uso: cage-720p <comando_do_jogo> [argumentos...]"
+            echo "Uso: cage-run [-r resolução] <comando> [argumentos...]"
+            echo "Exemplos:"
+            echo "  cage-run ~/Downloads/RunnersHigh.arm64"
+            echo "  cage-run -r 1280x720@60Hz ~/Downloads/RunnersHigh.arm64"
+            echo "  cage-run 1280x720 ~/Downloads/RunnersHigh.arm64"
             exit 1
           fi
+
+          RES="''${RES:-1280x720@60Hz}"
+          case "$1" in
+            -r|--res) RES="$2"; shift 2 ;;
+            [0-9]*x[0-9]*) RES="$1"; shift ;;
+          esac
+
           if [ -z "$XDG_RUNTIME_DIR" ]; then
             export XDG_RUNTIME_DIR="/run/user/$(id -u)"
           fi
+
           exec ${lib.getExe cage} -- ${lib.getExe' bash "sh"} -c '
-            ${lib.getExe wlr-randr} --output HDMI-A-1 --mode 1280x720@60Hz 2>/dev/null || true
+            ${lib.getExe wlr-randr} --output HDMI-A-1 --mode "$1" 2>/dev/null || \
+            ${lib.getExe wlr-randr} --output HDMI-A-1 --custom-mode "$1" 2>/dev/null || true
+            shift
             exec "$@"
-          ' dummy "$@"
+          ' dummy "$RES" "$@"
         '')
       ];
 
