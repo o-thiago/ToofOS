@@ -259,7 +259,16 @@ in
             $KDOCTOR "output.1.mode.$RES" >/dev/null 2>&1 || true
           fi
 
-          "$@"
+          # Aplica as regras de prioridade de processo recomendadas pelo Ananicy CachyOS para o tipo "Game":
+          # { "type": "Game", "nice": -5, "ioclass": "best-effort", "sched": "normal" }
+          # - nice: -5 dá maior prioridade de agendamento de CPU para o jogo frente a tarefas em segundo plano.
+          # - ioclass: best-effort (classe 2, prioridade máxima 0) garante prioridade de I/O em leitura de assets do disco.
+          # - sched: normal (SCHED_OTHER via chrt -o 0) garante política de agendamento padrão estável.
+          # Referência: https://github.com/CachyOS/ananicy-rules/blob/master/00-types.types
+          ${lib.getExe' pkgs.coreutils "nice"} -n -5 \
+            ${lib.getExe' pkgs.util-linux "ionice"} -c 2 -n 0 \
+            ${lib.getExe' pkgs.util-linux "chrt"} -o 0 \
+            "$@"
         '')
       ];
 
