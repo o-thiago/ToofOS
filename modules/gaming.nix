@@ -163,6 +163,19 @@ in
       systemPackages = with pkgs; [
         dacc-station
 
+        (makeDesktopItem {
+          name = "java-runner";
+          desktopName = "Java Runner";
+          comment = "Executa arquivos Java (.jar)";
+          exec = "java -jar %f";
+          terminal = false;
+          mimeTypes = [
+            "application/x-java-archive"
+            "application/java-archive"
+            "application/x-jar"
+          ];
+        })
+
         # Ferramentas padrão de benchmarking para jogos e latência de entrada
         mangohud # Overlay oficial com FPS médio, 1% low, 0.1% low, toggle via F12 e log em CSV
         evtest # Ferramenta padrão para testar e medir eventos e latência de periféricos/gamepads
@@ -195,6 +208,20 @@ in
           round_corners=5
           background_alpha=0.6
         '';
+      };
+    };
+
+    xdg.mime = {
+      enable = true;
+      defaultApplications = {
+        "application/x-java-archive" = "java-runner.desktop";
+        "application/java-archive" = "java-runner.desktop";
+        "application/x-jar" = "java-runner.desktop";
+      };
+      addedAssociations = {
+        "application/x-java-archive" = "java-runner.desktop";
+        "application/java-archive" = "java-runner.desktop";
+        "application/x-jar" = "java-runner.desktop";
       };
     };
   };
