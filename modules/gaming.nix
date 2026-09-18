@@ -191,7 +191,6 @@ in
 
         # Kiosk Wayland minimalista para testes e execução isolada de jogos
         cage
-        xwayland
       ];
 
       etc = {
