@@ -203,7 +203,7 @@ in
             exit 1
           fi
 
-          RES="''${RES:-1280x720@60Hz}"
+          RES="''${RES:-}"
           case "$1" in
             -r|--res) RES="$2"; shift 2 ;;
             [0-9]*x[0-9]*) RES="$1"; shift ;;
@@ -214,8 +214,10 @@ in
           fi
 
           exec ${lib.getExe cage} -- ${lib.getExe' bash "sh"} -c '
-            ${lib.getExe wlr-randr} --output HDMI-A-1 --mode "$1" 2>/dev/null || \
-            ${lib.getExe wlr-randr} --output HDMI-A-1 --custom-mode "$1" 2>/dev/null || true
+            if [ -n "$1" ]; then
+              ${lib.getExe wlr-randr} --output HDMI-A-1 --mode "$1" 2>/dev/null || \
+              ${lib.getExe wlr-randr} --output HDMI-A-1 --custom-mode "$1" 2>/dev/null || true
+            fi
             shift
             exec "$@"
           ' dummy "$RES" "$@"
