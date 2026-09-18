@@ -48,6 +48,7 @@ in
       enableRedistributableFirmware = lib.mkForce false;
       graphics.enable = true; # Suporte à GPU VideoCore VI
       uinput.enable = true; # Suporte a controles avançados (DualShock 4, Steam controller, etc.)
+      raspberry-pi.config.all.dt-overlays.vc4-kms-v3d.params.cma-512.enable = true;
     };
   };
 }

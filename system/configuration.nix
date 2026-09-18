@@ -61,6 +61,9 @@ in
     };
   };
 
-  boot.loader.generic-extlinux-compatible.configurationLimit = amountGenerations;
+  boot.loader.raspberry-pi = {
+    bootloader = "kernel";
+    configurationLimit = amountGenerations;
+  };
   system.stateVersion = "26.05";
 }
