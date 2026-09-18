@@ -18,6 +18,10 @@ in
     # Áudio de baixa latência para jogos (RTKit gerencia prioridades de tempo real via PipeWire)
     security.rtkit.enable = true;
 
+    # Gerenciador de assento/dispositivos para compositores Wayland independentes (ex: cage)
+    services.seatd.enable = true;
+    users.users.${user}.extraGroups = [ "seat" ];
+
     # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
     # para melhorar a responsividade do sistema e diminuir gargalos em jogos.
     services.ananicy = {
@@ -36,35 +40,40 @@ in
           nativeBuildInputs = [ pkgs.makeWrapper ];
           postBuild = ''
             wrapProgram $out/bin/java \
-              --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath (with pkgs; [
-                # Gráficos e GPU
-                libGL
-                libglvnd
-                mesa
-                vulkan-loader
+              --prefix LD_LIBRARY_PATH : "${
+                lib.makeLibraryPath (
+                  with pkgs;
+                  [
+                    # Gráficos e GPU
+                    libGL
+                    libglvnd
+                    mesa
+                    vulkan-loader
 
-                # Wayland e Janelas
-                wayland
-                libxkbcommon
-                libdecor
+                    # Wayland e Janelas
+                    wayland
+                    libxkbcommon
+                    libdecor
 
-                # X11 / Xwayland
-                libX11
-                libXrandr
-                libXcursor
-                libXinerama
-                libXi
-                libXxf86vm
-                libXext
-                libXrender
-                libXfixes
+                    # X11 / Xwayland
+                    libX11
+                    libXrandr
+                    libXcursor
+                    libXinerama
+                    libXi
+                    libXxf86vm
+                    libXext
+                    libXrender
+                    libXfixes
 
-                # Áudio e C++ Runtime
-                alsa-lib
-                libpulseaudio
-                pipewire
-                stdenv.cc.cc.lib
-              ])}"
+                    # Áudio e C++ Runtime
+                    alsa-lib
+                    libpulseaudio
+                    pipewire
+                    stdenv.cc.cc.lib
+                  ]
+                )
+              }"
           '';
         };
         binfmt = true;
@@ -162,7 +171,6 @@ in
     environment = {
       systemPackages = with pkgs; [
         dacc-station
-
         (makeDesktopItem {
           name = "java-runner";
           desktopName = "Java Runner";
@@ -180,6 +188,10 @@ in
         mangohud # Overlay oficial com FPS médio, 1% low, 0.1% low, toggle via F12 e log em CSV
         evtest # Ferramenta padrão para testar e medir eventos e latência de periféricos/gamepads
         glmark2 # Benchmark padrão OpenGL ES 2.0 / Wayland
+
+        # Kiosk Wayland minimalista para testes e execução isolada de jogos
+        cage
+        xwayland
       ];
 
       etc = {

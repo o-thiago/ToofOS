@@ -43,6 +43,7 @@ in
       "input"
       "pipewire"
       "dialout"
+      "seat"
     ];
   };
 
