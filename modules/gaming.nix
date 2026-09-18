@@ -27,10 +27,28 @@ in
     };
 
     programs = {
-      # Runtime Java (Eclipse Temurin JRE) e suporte a binfmt para execução de jogos .jar
+      # Runtime Java (Eclipse Temurin JRE) com suporte a binfmt e bibliotecas gráficas/Wayland para LWJGL
       java = {
         enable = true;
-        package = pkgs.temurin-jre-bin;
+        package = pkgs.symlinkJoin {
+          name = "temurin-jre-bin-wrapped";
+          paths = [ pkgs.temurin-jre-bin ];
+          nativeBuildInputs = [ pkgs.makeWrapper ];
+          postBuild = ''
+            wrapProgram $out/bin/java \
+              --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath (with pkgs; [
+                libGL
+                wayland
+                libxkbcommon
+                libX11
+                libXrandr
+                libXcursor
+                libXinerama
+                libXi
+                libXxf86vm
+              ])}"
+          '';
+        };
         binfmt = true;
       };
 
@@ -114,7 +132,6 @@ in
           libXScrnSaver
           libXrandr
           libxshmfence
-          libXxf86vm
 
           # Dependências necessária para os nossos jogos (não herdada da definição do Steam)
           glibc
