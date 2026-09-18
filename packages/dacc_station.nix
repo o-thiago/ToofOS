@@ -50,7 +50,8 @@ let
 
       cd "$runtime_dir"
 
-      trap 'kill $(jobs -p) 2>/dev/null || true' EXIT INT TERM
+      rm -f /tmp/dacc-station.sock /tmp/gameman.sock
+      trap 'kill $(jobs -p) 2>/dev/null; wait 2>/dev/null || true; rm -f /tmp/dacc-station.sock /tmp/gameman.sock' EXIT INT TERM
 
       "$station_root/bin/log-server" &
       "$station_root/bin/process-manager" &
