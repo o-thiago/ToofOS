@@ -29,6 +29,15 @@
     fsType = "ext4";
   };
 
+  fileSystems."/boot/firmware" = {
+    device = lib.mkDefault "/dev/disk/by-label/FIRMWARE";
+    fsType = "vfat";
+    options = [
+      "nofail"
+      "noatime"
+    ];
+  };
+
   swapDevices = [ ];
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 }
