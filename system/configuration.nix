@@ -1,42 +1,54 @@
-{ pkgs, ... }:
+{ config, lib, ... }:
 let
-  userName = "gamer";
+  inherit (config.toofos.user) name;
   amountGenerations = 3;
-  dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
 in
 {
   imports = [
     ./hardware-configuration.nix
+    ../modules
   ];
 
-  # Otimiza o desempenho do disco e reduz o desgaste do cartão SD ao desativar
-  # atualizações de tempo de acesso e aumentar o intervalo entre sincronizações no disco.
-  fileSystems."/".options = [
-    "noatime"
-    "commit=120"
-  ];
+  toofos = {
+    hardware.enable = true;
+    desktop.enable = true;
+    gaming.enable = true;
+  };
 
-  nix = {
-    settings = {
-      # Otimiza o armazenamento hard-linkando arquivos idênticos na store do Nix.
-      # Isso economiza de 25% a 40% de espaço em disco continuamente.
-      auto-optimise-store = true;
-      experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
-      extra-substituters = [ "https://nixos-raspberrypi.cachix.org" ];
-      extra-trusted-public-keys = [
-        "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-      ];
-      trusted-users = [
-        "root"
-        "@wheel"
-      ];
+  networking = {
+    hostName = "toofos";
+    networkmanager = {
+      enable = true;
+      # Evita que o host fique inacessível no Wi-Fi depois de algum tempo.
+      wifi.powersave = false;
     };
+  };
 
-    # Mantém apenas as 3 gerações mais recentes do sistema NixOS e coleta
-    # automaticamente os caminhos da store que não são mais alcançáveis.
+  # Evita que a inicialização trave por até 30s aguardando conexão de rede caso o console
+  # inicialize offline ou com Wi-Fi lento. A interface gráfica e os jogos inicializam
+  # imediatamente, enquanto a rede conecta em segundo plano.
+  systemd.services.NetworkManager-wait-online.enable = false;
+
+  services.openssh.enable = true;
+
+  users.users.${name} = {
+    isNormalUser = true;
+    description = name;
+    initialPassword = name;
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "video"
+      "render"
+      "input"
+      "pipewire"
+      "dialout"
+    ];
+  };
+
+  # Mantém apenas as 3 gerações mais recentes do sistema NixOS e coleta
+  # automaticamente os caminhos da store que não são mais alcançáveis.
+  nix = {
     gc = {
       automatic = true;
       dates = "weekly";
@@ -49,320 +61,6 @@ in
     };
   };
 
-  nixpkgs.config = {
-    allowUnfree = true;
-    # Permite executar nix-eval a partir de arquiteturas sem suporte, como desktops x86-64 Linux.
-    allowUnsupportedSystem = true;
-  };
-
-  networking = {
-    hostName = "toofos";
-    networkmanager = {
-      enable = true;
-      # Evita que o host fique inacessível no Wi-Fi depois de algum tempo.
-      wifi.powersave = false;
-    };
-  };
-
-  # Otimiza a memória para 8 GB de RAM usando zram com lz4 (menor sobrecarga de CPU especificamente em ARM)
-  zramSwap = {
-    enable = true;
-    algorithm = "lz4";
-    memoryPercent = 100;
-  };
-
-  security = {
-    # Necessário para Wayland e sessões gráficas
-    polkit.enable = true;
-    # Áudio de baixa latência para jogos (RTKit gerencia prioridades de tempo real via PipeWire)
-    rtkit.enable = true;
-  };
-
-  time.timeZone = "UTC";
-  i18n.defaultLocale = "pt_BR.UTF-8";
-  console.keyMap = "br-abnt2";
-
-  users.users.${userName} = {
-    isNormalUser = true;
-    description = userName;
-    initialPassword = userName;
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "video"
-      "render"
-      "input"
-      "pipewire"
-      "dialout"
-    ];
-  };
-
-  # Evita que a inicialização trave por até 30s aguardando conexão de rede caso o console
-  # inicialize offline ou com Wi-Fi lento. A interface gráfica e os jogos inicializam
-  # imediatamente, enquanto a rede conecta em segundo plano.
-  systemd.services.NetworkManager-wait-online.enable = false;
-
-  services = {
-    openssh.enable = true;
-    pipewire = {
-      enable = true;
-      pulse.enable = true;
-      jack.enable = true;
-      alsa = {
-        enable = true;
-        # Não usamos support32Bit pois o Raspberry Pi 4 roda puramente em arquitetura
-        # 64 bits (aarch64-linux), sem suporte ou necessidade de bibliotecas multilib x86/32 bits.
-        support32Bit = false;
-      };
-    };
-
-    # Armazena logs do journal na memória RAM em vez de gravar continuamente no SD Card
-    journald.extraConfig = ''
-      Storage=volatile
-      SystemMaxUse=64M
-    '';
-
-    # Gerenciador de exibição com login automático na sessão Plasma 6 (Wayland)
-    displayManager = {
-      defaultSession = "plasma";
-      autoLogin = {
-        enable = true;
-        user = userName;
-      };
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-      };
-    };
-
-    # Ambiente de Desktop: KDE Plasma 6 (KWin Wayland com Direct Scanout nativo)
-    desktopManager.plasma6 = {
-      enable = true;
-      enableQt5Integration = false; # Sistema puramente Qt6, economizando RAM e armazenamento
-    };
-
-    fwupd.enable = false; # Desativa atualizador de firmware e loja Discover
-
-    # Gerencia automaticamente a prioridade de CPU e IO (nice/ionice) dos processos
-    # para melhorar a responsividade do sistema e diminuir gargalos em jogos.
-    # O ajuste é feito baseado em uma lista predeterminada de regras (cachyos)
-    # e não através de detecção do que é ou não um jogo.
-    ananicy = {
-      enable = true;
-      package = pkgs.ananicy-cpp;
-      rulesProvider = pkgs.ananicy-rules-cachyos;
-    };
-  };
-
-  programs = {
-    # Permite rodar binários compilados dinamicamente (como jogos e apps de fora do Nix) sem precisar empacotar cada um individualmente.
-    # As bibliotecas abaixo cobrem a grande maioria dos jogos e engines que provavelmente iremos usar no projeto. (Godot, SDL2, Unity, etc...).
-    # Esta lista é baseada no ambiente de runtime da Steam: https://github.com/ValveSoftware/steam-runtime/blob/master/build-runtime.py
-    nix-ld = {
-      enable = true;
-      libraries = with pkgs; [
-        # Gráficos e GPU
-        libGL
-        libdrm
-        mesa
-        vulkan-loader
-
-        # Wayland
-        libxkbcommon
-        wayland
-
-        # Áudio
-        alsa-lib
-        libpulseaudio
-        pipewire
-
-        # Toolkit de Interface (GUI) e Acessibilidade
-        at-spi2-atk
-        at-spi2-core
-        atk
-        cairo
-        gdk-pixbuf
-        gtk3
-        pango
-
-        # Notificações, Status e Impressão
-        cups
-        libappindicator-gtk3
-        libnotify
-
-        # Rede e Segurança Web
-        curl
-        nspr
-        nss
-        openssl
-
-        # Fontes e Texto
-        fontconfig
-        freetype
-
-        # Dispositivos, USB e Sistemas de Arquivos
-        fuse3
-        libusb1
-
-        # Sistema, Utilitários e Runtime
-        dbus
-        expat
-        glib
-        libelf
-        libuuid
-        stdenv.cc.cc.lib # libstdc++
-        systemd
-        zlib
-
-        glibc # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
-        # Funcionalidades base do servidor X11
-        libX11
-        libxcb
-
-        # Gerenciamento de janelas e renderização X11
-        libXcomposite
-        libXdamage
-        libXext
-        libXfixes
-        libXrender
-
-        # Interação e periféricos X11
-        libXcursor
-        libXi
-        libXtst
-        libxkbfile
-
-        # Telas e utilitários X11
-        libXScrnSaver
-        libXrandr
-        libxshmfence
-
-        libXinerama # Dependência necessária para os nossos jogos (não herdada da definição do Steam)
-      ];
-    };
-
-    git.enable = true;
-    vim = {
-      enable = true;
-      defaultEditor = true;
-    };
-  };
-
-  environment = {
-    systemPackages = with pkgs; [
-      dacc-station
-      brave-origin
-
-      # Ferramentas padrão de benchmarking para jogos e latência de entrada
-      mangohud # Overlay oficial com FPS médio, 1% low, 0.1% low, toggle via F12 e log em CSV
-      evtest # Ferramenta padrão para testar e medir eventos e latência de periféricos/gamepads
-      glmark2 # Benchmark padrão OpenGL ES 2.0 / Wayland
-    ];
-
-    # Remove aplicativos do Plasma que não fazem sentido em um console,
-    # mantendo um desktop minimalista com apenas navegador e editor de texto.
-    plasma6.excludePackages = with pkgs.kdePackages; [
-      elisa # Player de música
-      gwenview # Visualizador de fotos
-      okular # Leitor de PDFs/documentos
-      ark # Gerenciador de arquivos compactados (.zip/.tar)
-      khelpcenter # Central de ajuda do KDE
-      spectacle # Ferramenta de captura de tela
-      krdp # Servidor de área de trabalho remota RDP
-      ffmpegthumbs # Gerador de miniaturas de vídeo
-      baloo-widgets # Widgets do indexador de arquivos
-      dolphin-plugins # Plugins de integração do Dolphin
-      kwin-x11 # Sessão X11 legada (sistema roda exclusivamente em Wayland)
-      dolphin # Gerenciador de arquivos completo
-      konsole # Terminal dedicado
-      qrca # Scanner de QR Code via câmera (ativado por padrão com NetworkManager)
-    ];
-
-    etc = {
-      # Autostart padrão XDG para inicializar o DACC Station automaticamente ao iniciar a sessão gráfica
-      "xdg/autostart/dacc-station.desktop".text = ''
-        [Desktop Entry]
-        Type=Application
-        Name=DACC Station
-        Comment=Interface de console para jogos DACC Station
-        Exec=${dacc-station}/bin/dacc-station
-        Terminal=false
-        Categories=Game;
-      '';
-
-      # Desativa a indexação contínua de arquivos do Baloo para poupar CPU e desgaste do cartão SD
-      "xdg/baloofilerc".text = ''
-        [Basic Settings]
-        Indexing-Enabled=false
-      '';
-
-      # Configuração do KWin Wayland para baixa latência e economia de GPU no VideoCore VI
-      "xdg/kwinrc".text = ''
-        [Compositing]
-        AnimationSpeed=0
-        LatencyPolicy=Extreme
-
-        [Plugins]
-        blurEnabled=false
-        contrastEnabled=false
-        slideEnabled=false
-        fadeEnabled=false
-        zoomEnabled=false
-
-        # Desativa a Luz Noturna (Night Light / Night Color) do KDE Plasma para evitar tela amarelada
-        [NightColor]
-        Active=false
-      '';
-
-      # Configuração global do MangoHud para o ToofOS (Average FPS, 1% low, 0.1% low e toggle F12)
-      "MangoHud.conf".text = ''
-        fps
-        frametime=1
-        fps_metrics=avg,1,0.1
-        toggle_hud=F12
-        toggle_logging=F2
-        benchmark_percentiles=99,99.9
-        output_folder=/home/${userName}/benchmarks
-        position=top-left
-        font_size=18
-        round_corners=5
-        background_alpha=0.6
-      '';
-    };
-  };
-
-  boot = {
-    # Mover arquivos temporários para RAM, evitando lentidão do cartão SD
-    tmp = {
-      useTmpfs = true;
-      tmpfsSize = "2G";
-    };
-
-    loader = {
-      grub.enable = false;
-
-      # Desativa o gerenciamento de bootloader customizado do nixos-raspberrypi
-      # já que a partição de firmware é travada/indisponível no cartão SD.
-      raspberry-pi.enable = pkgs.lib.mkForce false;
-
-      # Usa o bootloader genérico do U-Boot/Extlinux, que apenas cria o
-      # extlinux.conf em /boot sem tentar modificar os binários de firmware.
-      generic-extlinux-compatible = {
-        enable = true;
-        configurationLimit = amountGenerations;
-      };
-    };
-
-    kernelParams = [ "cpufreq.default_governor=performance" ];
-  };
-
-  hardware = {
-    # Desativa download do linux-firmware genérico (Intel/AMD/Mellanox x86) economizando ~1.5 GB.
-    # O firmware do Raspberry Pi 4 (Wi-Fi Broadcom e VideoCore) é fornecido nativamente pelo nixos-raspberrypi.
-    enableRedistributableFirmware = pkgs.lib.mkForce false;
-    graphics.enable = true; # Suporte à GPU VideoCore VI
-    uinput.enable = true; # Suporte a controles avançados (DualShock 4, Steam controller, etc.)
-  };
-
+  boot.loader.generic-extlinux-compatible.configurationLimit = amountGenerations;
   system.stateVersion = "26.05";
 }
