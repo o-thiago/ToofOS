@@ -191,8 +191,6 @@ in
 
         # Ferramentas padrão de benchmarking para jogos e latência de entrada
         mangohud # Overlay oficial com FPS médio, 1% low, 0.1% low, toggle via F12 e log em CSV
-        evtest # Ferramenta padrão para testar e medir eventos e latência de periféricos/gamepads
-        glmark2 # Benchmark padrão OpenGL ES 2.0 / Wayland
 
         # Kiosk Wayland minimalista para testes e execução isolada de jogos
         cage
