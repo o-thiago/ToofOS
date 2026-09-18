@@ -62,16 +62,11 @@ in
         elisa # Player de música
         gwenview # Visualizador de fotos
         okular # Leitor de PDFs/documentos
-        ark # Gerenciador de arquivos compactados (.zip/.tar)
         khelpcenter # Central de ajuda do KDE
-        spectacle # Ferramenta de captura de tela
         krdp # Servidor de área de trabalho remota RDP
         ffmpegthumbs # Gerador de miniaturas de vídeo
         baloo-widgets # Widgets do indexador de arquivos
-        dolphin-plugins # Plugins de integração do Dolphin
         kwin-x11 # Sessão X11 legada (sistema roda exclusivamente em Wayland)
-        dolphin # Gerenciador de arquivos completo
-        konsole # Terminal dedicado
         qrca # Scanner de QR Code via câmera (ativado por padrão com NetworkManager)
       ];
 
