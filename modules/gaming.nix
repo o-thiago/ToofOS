@@ -192,6 +192,20 @@ in
         # Kiosk Wayland minimalista para testes e execução isolada de jogos
         cage
         wlr-randr
+
+        (writeShellScriptBin "cage-720p" ''
+          if [ $# -eq 0 ]; then
+            echo "Uso: cage-720p <comando_do_jogo> [argumentos...]"
+            exit 1
+          fi
+          if [ -z "$XDG_RUNTIME_DIR" ]; then
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+          fi
+          exec ${cage}/bin/cage -- ${bash}/bin/sh -c '
+            ${wlr-randr}/bin/wlr-randr --output HDMI-A-1 --mode 1280x720@60Hz 2>/dev/null || true
+            exec "$@"
+          ' dummy "$@"
+        '')
       ];
 
       etc = {
