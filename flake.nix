@@ -42,7 +42,8 @@
 
           formatter = pkgs.nixfmt-tree;
           packages = {
-            dacc-station = pkgs.callPackage ./packages/dacc_station.nix { };
+            dacc-station = pkgs.callPackage ./packages/dacc-station { };
+            dacc-gamepad = pkgs.callPackage ./packages/dacc-gamepad { };
             live = live.config.system.build.sdImage;
           };
         };

@@ -2,12 +2,13 @@
   config,
   lib,
   pkgs,
+  self,
   ...
 }:
 let
   cfg = config.toofos.gaming;
   user = config.toofos.user.name;
-  dacc-station = pkgs.callPackage ../packages/dacc_station.nix { };
+  inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) dacc-station dacc-gamepad;
 in
 {
   options.toofos.gaming = {
@@ -34,6 +35,33 @@ in
     systemd.tmpfiles.rules = [
       "d /home/${user}/benchmarks 0755 ${user} users -"
     ];
+
+    # Serviço para mapear o controle físico nice!nano (VID 239a, PID 80b4) para um
+    # gamepad virtual DACC Station Controller (uinput) compatível com SDL, Java e Wayland
+    systemd.services.dacc-gamepad = {
+      description = "DACC Station Gamepad Mapper";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "systemd-udevd.service" ];
+      wants = [ "systemd-udevd.service" ];
+      serviceConfig = {
+        Type = "simple";
+        ExecStart = lib.getExe dacc-gamepad;
+        Restart = "always";
+        RestartSec = 1;
+        Environment = "PYTHONUNBUFFERED=1";
+        StandardOutput = "journal";
+        StandardError = "journal";
+      };
+    };
+
+    services.udev.extraRules = ''
+      # DACC Station Controller
+      # Impede que jogos acessem diretamente o HID físico nice!nano bruto
+      SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="239a", ATTRS{idProduct}=="80b4", MODE:="0600", TAG-="uaccess", ENV{ID_INPUT_JOYSTICK}=""
+
+      # Permite acesso de usuário e identifica o controle virtual como joystick
+      SUBSYSTEM=="input", KERNEL=="event*", ATTRS{name}=="DACC Station Controller", MODE:="0660", ENV{ID_INPUT_JOYSTICK}:="1", TAG+="uaccess"
+    '';
 
     programs = {
       # Runtime Java (Eclipse Temurin JRE) com suporte a binfmt e bibliotecas gráficas/Wayland para LWJGL
@@ -176,6 +204,7 @@ in
     environment = {
       systemPackages = with pkgs; [
         dacc-station
+        dacc-gamepad
         (makeDesktopItem {
           name = "java-runner";
           desktopName = "Java Runner";

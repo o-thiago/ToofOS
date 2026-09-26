@@ -30,6 +30,10 @@ in
   systemd.services.NetworkManager-wait-online.enable = false;
 
   services.openssh.enable = true;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
 
   users.users.${name} = {
     isNormalUser = true;
@@ -66,5 +70,6 @@ in
     bootloader = "kernel";
     configurationLimit = amountGenerations;
   };
+
   system.stateVersion = "26.05";
 }
